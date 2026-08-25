@@ -67,20 +67,32 @@ All models are **lightweight and interpretable** — suitable for a hackathon pr
 
 ## Offline evaluation (5-fold CV)
 
-Evaluated on 1,730 cases with non-empty summaries:
+Evaluated on **1,730 cases** with non-empty summaries, using **`case_summary` only** — the same input the Gradio app receives at inference time. Reproducible in `hackathon-notebook.ipynb` (cells 8–9).
 
 | Task | Metric | Score |
 |---|---|---|
-| Team routing | Accuracy | **95.3%** (±0.6%) |
-| Category routing | Accuracy | **99.2%** (±0.2%) |
-| Priority | Accuracy | **70.3%** (±2.4%) |
-| Escalation | ROC AUC | **93.1%** (±1.6%) |
+| Team routing | Accuracy | **83.2%** (±2.3%) |
+| Category routing | Accuracy | **85.5%** (±1.5%) |
+| Priority | Accuracy | **60.7%** (±1.8%) |
+| Escalation | ROC AUC | **87.5%** (±1.4%) |
 
-Priority is hardest — labels overlap heavily (e.g. billing issues span Medium and High).
+**Priority is hardest** — labels overlap heavily (e.g. billing issues span Medium and High).
+
+### Confidence distribution (summary-only)
+
+When models are uncertain, agents should override the suggestion:
+
+| Target | Median confidence | Cases below 50% confidence |
+|---|---|---|
+| assigned_team | 73% | 14.5% |
+| category | 59% | 34.2% |
+| priority | 57% | 30.8% |
+
+Category and priority are often ambiguous from summary text alone — the UI shows confidence explicitly so agents know when to use judgement.
 
 ## Risks and limitations
 
-1. **Training vs inference text mismatch (important):** Classifiers are trained on enriched `search_text` (includes category/subcategory/tags). At inference, only the **case summary** (+ optional channel/plan tier) is available. Offline CV scores are **optimistic** for brand-new cases. Production version should retrain on summary-only text.
+1. **Training vs inference text mismatch (important):** In the live app, routing classifiers are still trained on enriched `search_text` (summary + category + subcategory + tags), but inference uses **case summary only**. Notebook evaluation (above) reports honest **summary-only** scores. A production version should retrain classifiers on summary-only text so training matches inference.
 
 2. **Confidence ≠ certainty:** Low-confidence suggestions (40–50%) should be treated as weak hints, not decisions.
 
@@ -107,7 +119,7 @@ Priority is hardest — labels overlap heavily (e.g. billing issues span Medium 
 source /path/to/.venv/bin/activate
 cd lessons
 python app.py                    # Gradio prototype
-jupyter notebook hackathon-notebook.ipynb   # EDA + smoke tests
+jupyter notebook hackathon-notebook.ipynb   # EDA + evaluation + smoke tests
 ```
 
 **Dependencies:** `pandas`, `numpy`, `scikit-learn`, `gradio` (see `requirements.txt`).
